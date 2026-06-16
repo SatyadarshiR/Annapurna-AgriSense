@@ -1,0 +1,83 @@
+{
+  "name": "KrishiSathi - Agricultural Advisory Platform",
+  "short_name": "KrishiSathi",
+  "description": "Voice-first AI advisory platform for subsistence farmers in eastern India",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#16a34a",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["agriculture", "productivity"],
+  "screenshots": [
+    {
+      "src": "/screenshot-1.png",
+      "sizes": "540x720",
+      "type": "image/png"
+    },
+    {
+      "src": "/screenshot-2.png",
+      "sizes": "540x720",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "View Crop Calendar",
+      "short_name": "Crops",
+      "description": "Check your crop planting schedule",
+      "url": "/?feature=crops",
+      "icons": []
+    },
+    {
+      "name": "View Financial Dashboard",
+      "short_name": "Finance",
+      "description": "Monitor your farm finances",
+      "url": "/?feature=finance",
+      "icons": []
+    },
+    {
+      "name": "Check Pest Alerts",
+      "short_name": "Pests",
+      "description": "Get pest outbreak warnings",
+      "url": "/?feature=pests",
+      "icons": []
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "image",
+          "accept": ["image/*"]
+        }
+      ]
+    }
+  }
+}

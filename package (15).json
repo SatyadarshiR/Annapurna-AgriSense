@@ -1,0 +1,232 @@
+import fs from 'node:fs';
+import http from 'node:http';
+import path from 'node:path';
+import { expect, test } from '@playwright/test';
+
+let staticServer;
+
+const contentTypes = {
+  '.css': 'text/css',
+  '.html': 'text/html',
+  '.js': 'text/javascript',
+  '.json': 'application/json',
+  '.png': 'image/png',
+  '.svg': 'image/svg+xml'
+};
+
+test.beforeAll(async () => {
+  const distDir = path.resolve(process.cwd(), 'dist');
+  staticServer = http.createServer((req, res) => {
+    const requestPath = decodeURIComponent(new URL(req.url, 'http://127.0.0.1').pathname);
+    const safePath = path.normalize(requestPath).replace(/^(\.\.[/\\])+/, '');
+    const candidatePath = path.join(distDir, safePath === '/' ? 'index.html' : safePath);
+    const filePath = candidatePath.startsWith(distDir) &&
+      fs.existsSync(candidatePath) &&
+      fs.statSync(candidatePath).isFile()
+      ? candidatePath
+      : path.join(distDir, 'index.html');
+    const extension = path.extname(filePath);
+    res.setHeader('Content-Type', contentTypes[extension] || 'application/octet-stream');
+    fs.createReadStream(filePath).pipe(res);
+  });
+
+  await new Promise((resolve) => staticServer.listen(5173, '127.0.0.1', resolve));
+});
+
+test.afterAll(async () => {
+  staticServer?.closeAllConnections?.();
+  staticServer?.closeIdleConnections?.();
+  await new Promise((resolve) => staticServer?.close(resolve));
+});
+
+const farmer = {
+  _id: 'farmer-e2e',
+  name: 'Asha Devi',
+  phone: '+919876543210',
+  village: 'Kanke',
+  district: 'Ranchi',
+  state: 'Jharkhand',
+  preferredLanguage: 'hi',
+  crops: ['Paddy', 'Maize'],
+  landSizeBigha: 2
+};
+
+const json = (body, status = 200) => ({
+  status,
+  contentType: 'application/json',
+  body: JSON.stringify(body)
+});
+
+test.beforeEach(async ({ page }) => {
+  await page.route('**/api/**', async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const path = url.pathname;
+
+    if (path === '/api/auth/register') {
+      await route.fulfill(json({ token: 'e2e-token', farmer }, 201));
+      return;
+    }
+    if (path === '/api/auth/password-login' || path === '/api/farmer/me') {
+      await route.fulfill(json({ token: 'e2e-token', farmer }));
+      return;
+    }
+    if (path === '/api/crops/calendar') {
+      await route.fulfill(json({ calendars: [] }));
+      return;
+    }
+    if (path === '/api/crops/pests') {
+      await route.fulfill(json({ pests: [] }));
+      return;
+    }
+    if (path.startsWith('/api/finance/dashboard')) {
+      await route.fulfill(json({ dashboard: { totalExpense: 0, totalIncome: 0, netProfit: 0 } }));
+      return;
+    }
+    if (path === '/api/logistics/marketplace') {
+      await route.fulfill(json({ listings: [] }));
+      return;
+    }
+    if (path === '/api/community/groups') {
+      await route.fulfill(json({ groups: [] }));
+      return;
+    }
+    if (path === '/api/resources/kvk') {
+      await route.fulfill(
+        json({ kvks: [{ kvkId: 'kvk-ranchi', name: 'KVK Ranchi', district: 'Ranchi', state: 'Jharkhand' }] })
+      );
+      return;
+    }
+    if (path === '/api/resources/seed-recommendations') {
+      await route.fulfill(json({ seeds: [] }));
+      return;
+    }
+    if (path === '/api/services/schemes') {
+      await route.fulfill(json({ schemes: [] }));
+      return;
+    }
+    if (path === '/api/services/decision-advice') {
+      expect(request.method()).toBe('POST');
+      await route.fulfill(
+        json({
+          decision: {
+            actions: [
+              {
+                id: 'irrigation',
+                title: 'Trigger micro-irrigation window',
+                detail: 'Run short cycles before 9 AM.',
+                impact: '2,000 L projected water swing',
+                owner: farmer.name
+              },
+              {
+                id: 'pest',
+                title: 'Keep sentinel scouting active',
+                detail: 'Capture leaf photos and monitor pressure.',
+                impact: '24% disease-risk contribution',
+                owner: 'Scouting team'
+              },
+              {
+                id: 'market',
+                title: 'Prepare staged selling batch',
+                detail: 'Reserve produce for the first buyer window.',
+                impact: '₹4,800',
+                owner: farmer.village
+              }
+            ],
+            carbonSaved: 0.44,
+            confidence: 91,
+            label: 'Watch',
+            message: 'KrishiSathi plan for Paddy',
+            netGain: 4800,
+            riskScore: 58,
+            waterSaved: 2000
+          }
+        })
+      );
+      return;
+    }
+    if (path === '/api/services/decision-plans') {
+      expect(request.method()).toBe('POST');
+      await route.fulfill(json({ plan: { _id: 'decision-e2e' } }, 201));
+      return;
+    }
+    if (path === '/api/services/scheme-packs') {
+      expect(request.method()).toBe('POST');
+      await route.fulfill(json({ pack: { _id: 'scheme-pack-e2e' } }, 201));
+      return;
+    }
+    if (path === '/api/services/trust-ledger/metrics') {
+      await route.fulfill(
+        json({
+          metrics: {
+            totalReceipts: 1,
+            completedOutcomes: 1,
+            successRate: 100,
+            totalExpectedValue: 4800,
+            totalActualValue: 5100,
+            pendingReview: 0
+          }
+        })
+      );
+      return;
+    }
+    if (path === '/api/services/trust-ledger') {
+      if (request.method() === 'POST') {
+        await route.fulfill(json({ entry: { id: 'trust-e2e', outcome: { status: 'pending' } } }, 201));
+        return;
+      }
+      await route.fulfill(json({ entries: [{ id: 'trust-e2e', outcome: { status: 'pending' } }] }));
+      return;
+    }
+    if (path === '/api/services/trust-ledger/trust-e2e/outcome') {
+      expect(request.method()).toBe('POST');
+      await route.fulfill(json({ entry: { id: 'trust-e2e', outcome: { status: 'worked' } } }));
+      return;
+    }
+    if (path === '/api/services/impact-snapshots') {
+      expect(request.method()).toBe('POST');
+      await route.fulfill(json({ snapshot: { _id: 'impact-e2e' } }, 201));
+      return;
+    }
+
+    await route.fulfill(json({ ok: true }));
+  });
+});
+
+test('registers a farmer and saves decision plus scheme workflows', async ({ page }) => {
+  await page.goto('/');
+
+  await page.getByRole('button', { name: 'Register' }).click();
+  await page.getByLabel('Name').fill(farmer.name);
+  await page.getByLabel('Phone').fill('9876543210');
+  await page.getByLabel('Password').fill('strongpass123');
+  await page.getByLabel('Village').fill(farmer.village);
+  await page.getByLabel('District').fill(farmer.district);
+  await page.getByLabel('Land bigha').fill('2');
+  await page.getByLabel('Crops').fill('Paddy, Maize');
+  await page.getByRole('button', { name: /Create and enter/i }).click();
+
+  await expect(page.getByRole('banner').getByText(farmer.name)).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Plan the field/i })).toBeVisible();
+
+  await page.getByRole('navigation').getByRole('button', { name: 'Decision OS' }).click();
+  await expect(page.getByRole('heading', { name: 'Decision OS' })).toBeVisible();
+  await page.getByRole('button', { name: /Save plan/i }).click();
+  await expect(page.getByText('Decision pack saved.')).toBeVisible();
+  await expect(page.getByText('Advisory outcomes become field records.')).toBeVisible();
+  await page.getByRole('button', { name: /Save trust receipt/i }).click();
+  await expect(page.getByText('Trust receipt saved.')).toBeVisible();
+  await page.getByLabel('Actual value').fill('5100');
+  await page.getByLabel('Yield change %').fill('8');
+  await page.getByLabel('Outcome notes').fill('Farmer followed the action route.');
+  await page.getByRole('button', { name: /Record outcome/i }).click();
+  await expect(page.getByText('Outcome recorded.')).toBeVisible();
+
+  await page.getByRole('navigation').getByRole('button', { name: 'Resources' }).click();
+  await expect(page.getByRole('heading', { name: 'Resources', exact: true })).toBeVisible();
+  await expect(page.getByText('Government schemes and application links')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'PM-KISAN Samman Nidhi' })).toBeVisible();
+
+  await page.getByRole('button', { name: /Save application pack/i }).click();
+  await expect(page.getByText('Scheme application pack saved.')).toBeVisible();
+});

@@ -1,0 +1,51 @@
+{
+  "name": "krishisathi",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "npm@11.6.1",
+  "description": "Voice-first AI advisory platform for subsistence farmers in eastern India.",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "dev:client": "npm run dev --workspace @krishisathi/client",
+    "dev:server": "npm run dev --workspace @krishisathi/server",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{js,jsx,json,md,yml,yaml,css}": [
+      "prettier --write"
+    ],
+    "{client,server}/src/**/*.{js,jsx}": [
+      "eslint --max-warnings 0"
+    ]
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.5.0",
+    "@commitlint/config-conventional": "^19.5.0",
+    "@types/node": "^25.9.1",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^8.57.1",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
+    "prettier": "^3.3.3",
+    "turbo": "^2.2.3",
+    "typescript": "^6.0.3"
+  }
+}

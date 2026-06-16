@@ -1,0 +1,23 @@
+import {
+  Activity,
+  BadgeIndianRupee,
+  Compass,
+  LayoutDashboard,
+  Mic,
+  ShieldCheck,
+  Sprout,
+  Truck,
+  Users
+} from 'lucide-react';
+
+export const navItems = [
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'advisor', label: 'Advisor', icon: Mic },
+  { id: 'decision', label: 'Decision OS', icon: Activity },
+  { id: 'crops', label: 'Crops', icon: Sprout },
+  { id: 'market', label: 'Market', icon: BadgeIndianRupee },
+  { id: 'finance', label: 'Finance', icon: ShieldCheck },
+  { id: 'logistics', label: 'Logistics', icon: Truck },
+  { id: 'community', label: 'Community', icon: Users },
+  { id: 'resources', label: 'Resources', icon: Compass }
+];

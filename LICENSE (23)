@@ -1,0 +1,109 @@
+"""FastAPI inference service for the PlantVillage crop disease model."""
+
+from __future__ import annotations
+
+import io
+import json
+import os
+from functools import lru_cache
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+import tensorflow as tf
+from fastapi import FastAPI, File, HTTPException, UploadFile
+from PIL import Image, UnidentifiedImageError
+from pydantic import BaseModel
+
+
+MODEL_PATH = Path(os.getenv("MODEL_PATH", "artifacts/model.h5"))
+LABELS_PATH = Path(os.getenv("LABELS_PATH", "artifacts/labels.json"))
+MAX_IMAGE_BYTES = int(os.getenv("MAX_IMAGE_BYTES", str(6 * 1024 * 1024)))
+
+app = FastAPI(
+    title="KrishiSathi Crop Disease Classifier",
+    version="1.0.0",
+    description="PlantVillage MobileNetV2 image classifier for crop disease inference.",
+)
+
+
+class PredictionResponse(BaseModel):
+    disease_name: str
+    confidence: float
+    class_index: int
+    crop: str | None = None
+    condition: str | None = None
+    model_path: str
+
+
+def parse_label(label: str) -> tuple[str | None, str | None]:
+    if " - " in label:
+        crop, condition = label.split(" - ", 1)
+        return crop, condition
+    if "___" in label:
+        crop, condition = label.split("___", 1)
+        return crop.replace("_", " "), condition.replace("_", " ")
+    return None, label
+
+
+@lru_cache(maxsize=1)
+def load_assets() -> tuple[tf.keras.Model, list[str], int]:
+    if not MODEL_PATH.exists():
+        raise RuntimeError(f"Model file not found: {MODEL_PATH}")
+    if not LABELS_PATH.exists():
+        raise RuntimeError(f"Labels file not found: {LABELS_PATH}")
+
+    model = tf.keras.models.load_model(MODEL_PATH)
+    with LABELS_PATH.open("r", encoding="utf-8") as file:
+        label_payload: dict[str, Any] = json.load(file)
+
+    labels = label_payload["labels"]
+    image_size = int(label_payload.get("image_size", 224))
+    return model, labels, image_size
+
+
+def read_image(image_bytes: bytes, image_size: int) -> np.ndarray:
+    if len(image_bytes) > MAX_IMAGE_BYTES:
+        raise HTTPException(status_code=413, detail="Image file is too large")
+
+    try:
+        image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    except UnidentifiedImageError as exc:
+        raise HTTPException(status_code=400, detail="Uploaded file is not a valid image") from exc
+
+    image = image.resize((image_size, image_size))
+    array = np.asarray(image, dtype=np.float32)
+    return np.expand_dims(array, axis=0)
+
+
+@app.get("/health")
+def health() -> dict[str, str]:
+    try:
+        load_assets()
+        return {"status": "ok", "model": str(MODEL_PATH)}
+    except RuntimeError as error:
+        return {"status": "model_missing", "detail": str(error)}
+
+
+@app.post("/predict", response_model=PredictionResponse)
+async def predict(file: UploadFile = File(...)) -> PredictionResponse:
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Upload must be an image")
+
+    model, labels, image_size = load_assets()
+    image_bytes = await file.read()
+    batch = read_image(image_bytes, image_size)
+    probabilities = model.predict(batch, verbose=0)[0]
+    class_index = int(np.argmax(probabilities))
+    confidence = float(probabilities[class_index])
+    disease_name = labels[class_index]
+    crop, condition = parse_label(disease_name)
+
+    return PredictionResponse(
+        disease_name=disease_name,
+        confidence=round(confidence, 6),
+        class_index=class_index,
+        crop=crop,
+        condition=condition,
+        model_path=str(MODEL_PATH),
+    )

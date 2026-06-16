@@ -1,0 +1,5 @@
+# Client
+
+React 18 PWA for KrishiSathi's voice-first farmer experience.
+
+The client is designed around zero-typing interactions: hold-to-speak voice input, audio playback responses, iconographic navigation, offline queueing, and service-worker-backed on-device inference.

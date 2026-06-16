@@ -1,0 +1,9 @@
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+python-multipart==0.0.19
+pillow==11.0.0
+numpy==1.26.4
+pandas==2.2.3
+scikit-learn==1.5.2
+tensorflow==2.17.1
+tensorflow-datasets==4.9.7
