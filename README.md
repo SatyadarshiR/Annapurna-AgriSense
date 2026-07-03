@@ -1,6 +1,6 @@
-# KrishiSathi
+# Annapurna AgriSense
 
-Voice-first farm advisory platform for farmers in Jharkhand, Bihar, and West Bengal.
+Voice-first farm advisory platform for farmers in Odisha, Jharkhand, Bihar, and West Bengal.
 
 ## Current Structure
 
@@ -38,7 +38,7 @@ Copy-Item server\.env.example server\.env
 Set `MONGODB_URI` in `server\.env` to your MongoDB Atlas connection string:
 
 ```env
-MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-host>/krishisathi?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-host>/annapurnaagrisense?retryWrites=true&w=majority
 ```
 
 In MongoDB Atlas, make sure the database user has read/write access and that your current IP address is allowed under Network Access. The server logs `mongo_connected` and starts with `storageMode: "mongo"` when Atlas is connected.
@@ -61,7 +61,7 @@ The API gateway runs without Docker. If MongoDB is not available, farmer auth/pr
 Verify the live Atlas connection before a demo:
 
 ```powershell
-npm run verify:atlas --workspace @krishisathi/server
+npm run verify:atlas --workspace @annapurnaagrisense/server
 ```
 
 The command prints redacted connection details, database name, collection names, and ping latency.
@@ -118,15 +118,15 @@ The app is designed to degrade gracefully for demos: authentication can run on l
 ## Quality Checks
 
 ```powershell
-npm run typecheck --workspace @krishisathi/server
-npm run lint --workspace @krishisathi/server
-npm run test --workspace @krishisathi/server
-npm run typecheck --workspace @krishisathi/client
-npm run lint --workspace @krishisathi/client
-npm run test --workspace @krishisathi/client
-npm run test:e2e --workspace @krishisathi/client
-npm run build --workspace @krishisathi/client
-npm run verify:atlas --workspace @krishisathi/server
+npm run typecheck --workspace @annapurnaagrisense/server
+npm run lint --workspace @annapurnaagrisense/server
+npm run test --workspace @annapurnaagrisense/server
+npm run typecheck --workspace @annapurnaagrisense/client
+npm run lint --workspace @annapurnaagrisense/client
+npm run test --workspace @annapurnaagrisense/client
+npm run test:e2e --workspace @annapurnaagrisense/client
+npm run build --workspace @annapurnaagrisense/client
+npm run verify:atlas --workspace @annapurnaagrisense/server
 ```
 
 ## Notes
